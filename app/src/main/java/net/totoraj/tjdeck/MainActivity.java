@@ -36,6 +36,8 @@ public class MainActivity extends Activity {
     private WebView mWebView = null;
     private String tjDeckScript = "";
     private String tjCheckScript = "";
+    private String regexDeck = "^https://tweetdeck\\.twitter\\.com.*$";
+    private String regexTwitter = "^https://(.+\\.|)twitter\\.com/(login|logout|sessions|account/login_verification).*$";
 
     public static final int INPUT_FILE_REQUEST_CODE = 1;
     public static final String EXTRA_FROM_NOTIFICATION = "EXTRA_FORM_NOTIFICATION";
@@ -233,8 +235,9 @@ public class MainActivity extends Activity {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             String url = request.getUrl().toString();
-            boolean itDeck = Pattern.matches("^https://tweetdeck\\.twitter\\.com.*$", url);
-            boolean itTwiLogin = Pattern.matches("^https://(.+\\.|)twitter\\.com/(login|logout).*$", url);
+            Log.d(TAG, url);
+            boolean itDeck = Pattern.matches(regexDeck, url);
+            boolean itTwiLogin = Pattern.matches(regexTwitter, url);
 
             // DeckでもTwitterログインページでもなければブラウザに飛ばす
             if (!itDeck && !itTwiLogin) {
@@ -260,8 +263,8 @@ public class MainActivity extends Activity {
         /* tj-deck.jsを実行する */
         private void runTJDeckScript(final WebView view, final String url) {
 
-            boolean itDeck = Pattern.matches("^https://tweetdeck\\.twitter\\.com.*$", url);
-            boolean itTwiLogin = Pattern.matches("^https://(.+\\.|)twitter\\.com/(login|logout).*$", url);
+            boolean itDeck = Pattern.matches(regexDeck, url);
+            boolean itTwiLogin = Pattern.matches(regexTwitter, url);
             Log.d(TAG, url);
             if (itDeck) {
                 Log.d(TAG, "TweetDeckです");
