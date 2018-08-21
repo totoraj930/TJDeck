@@ -1,0 +1,1 @@
+!!document.querySelector(".login-container").style.display.match("none") && typeof(tj_deck) == "undefined";
