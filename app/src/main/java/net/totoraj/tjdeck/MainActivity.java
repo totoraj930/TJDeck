@@ -4,9 +4,11 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.MutableContextWrapper;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,7 +31,7 @@ import java.util.Date;
 import java.util.regex.Pattern;
 
 public class MainActivity extends Activity {
-
+    private String TAG = "TJDeck";
     private View mContent;
     private WebView mWebView = null;
     private String tjDeckScript = "";
@@ -50,10 +52,16 @@ public class MainActivity extends Activity {
 
         /* jsの用意 */
         try {
-            tjDeckScript = loadAssets("tj-deck.js");
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "デバッグ用");
+                tjDeckScript = loadAssets("tj-deck-debug.js");
+            } else {
+                Log.d(TAG, "リリース用");
+                tjDeckScript = loadAssets("tj-deck.js");
+            }
             tjCheckScript = loadAssets("test.js");
         } catch (Exception error) {
-            System.out.println("onError");
+            Log.d(TAG, "onError");
         }
 
         mWebView = (WebView) findViewById(R.id.webView1);
@@ -242,7 +250,7 @@ public class MainActivity extends Activity {
 
 //        @Override
 //        public void onLoadResource(WebView view, String url) {
-//            System.out.println("onLoadResource: " + url);
+//            Log.d(TAG, "onLoadResource: " + url);
 //        }
 //        @Override
 //        public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
@@ -254,31 +262,31 @@ public class MainActivity extends Activity {
 
             boolean itDeck = Pattern.matches("^https://tweetdeck\\.twitter\\.com.*$", url);
             boolean itTwiLogin = Pattern.matches("^https://(.+\\.|)twitter\\.com/(login|logout).*$", url);
-            System.out.println(url);
+            Log.d(TAG, url);
             if (itDeck) {
-                System.out.println("TweetDeckです");
+                Log.d(TAG, "TweetDeckです");
 
                 // TweetDeckにログインしていてなおかつtj-deckが実行されていないか確認する
                 view.evaluateJavascript(tjCheckScript, new ValueCallback<String>() {
                     @Override
                     public void onReceiveValue(String value) {
-                        System.out.println(value);
+                        Log.d(TAG, value);
                         if (Boolean.parseBoolean(value)) {
                             // 実行！！
                             view.evaluateJavascript(tjDeckScript, null);
                         }
                         else if (Pattern.matches("^.*/\\?via_twitter_login=true$", url)) {
-                            System.out.println("via_twitter_login=true");
+                            Log.d(TAG, "via_twitter_login=true");
                             view.evaluateJavascript(tjDeckScript, null);
                         }
                     }
                 });
             }
             else if (itTwiLogin) {
-                System.out.println("Twitterのログインページです");
+                Log.d(TAG, "Twitterのログインページです");
             }
             else {
-                System.out.println("それ以外です");
+                Log.d(TAG, "それ以外です");
             }
         }
 
