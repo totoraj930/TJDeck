@@ -69,7 +69,10 @@ public class MainActivity extends Activity {
         mWebView = (WebView) findViewById(R.id.webView1);
 
         mWebView.setWebViewClient(new TJClient());
-        mWebView.setWebChromeClient(new TJChromeClient());
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            mWebView.setWebChromeClient(new TJChromeClient());
+        }
 
         WebSettings settings = mWebView.getSettings();
         settings.setJavaScriptEnabled(true);
