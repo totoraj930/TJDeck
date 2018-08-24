@@ -1,8 +1,12 @@
 package net.totoraj.tjdeck;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -21,12 +25,20 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
@@ -53,14 +65,19 @@ public class MainActivity extends Activity {
         mNavigationView.setNavigationItemSelectedListener(new TJNavigationListener());
 
         mWebView = (WebView) findViewById(R.id.webView);
-        mCustomView = findViewById(R.id.customView);
+        mCustomView = (FrameLayout) findViewById(R.id.customView);
+
+        TextView versionText = (TextView) mNavigationView.findViewById(R.id.menuVersionText);
+        if (versionText != null) versionText.setText("Version: "+getVersionName());
+
+        /* アップデートをチェック */
+        checkUpdate(false);
 
 
         mWebView.setWebViewClient(new TJClient());
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
             mWebView.setWebChromeClient(new TJChromeClient());
-        }
 
         WebSettings settings = mWebView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -76,6 +93,67 @@ public class MainActivity extends Activity {
         }
     }
 
+    private String githubLatestUrl = "https://github.com/totoraj930/TJDeck/releases/latest";
+    private String githubJsonUrl = "https://api.github.com/repos/totoraj930/TJDeck/releases/latest";
+
+    /* アップデートがあるかチェックする */
+    public void checkUpdate(boolean showLatestMessage) {
+        String nowVersion = getVersionName();
+        String latestVersion = getLatestVersionName();
+
+        if (isLatestVersion(nowVersion, latestVersion)) {
+            Log.d(TAG, "最新版です: "+nowVersion+":"+latestVersion);
+            if (showLatestMessage)
+                Toast.makeText(MainActivity.this, "最新バージョンです", Toast.LENGTH_SHORT).show();
+        } else {
+            Log.d(TAG, "古いです: "+nowVersion+":"+latestVersion);
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("アップデートがあります")
+                    .setMessage("最新版のダウンロードページを開きますか？")
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(githubLatestUrl));
+                            startActivity(intent);
+                        }
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        }
+    }
+
+    /* バージョン文字列を比較して最新かどうがをチェックする */
+    public boolean isLatestVersion(String nowVersion, String version) {
+        String[] nowVersionList = nowVersion.split("\\.");
+        String[] versionList = version.split("\\.");
+        for (int i=0; i < versionList.length; i++) {
+            if (nowVersionList.length-1 < i) return false;
+            if (Double.parseDouble(nowVersionList[i]) < Double.parseDouble(versionList[i]))
+                return false;
+        }
+        return true;
+    }
+
+    /* 現在のversionNameを取得する */
+    public String getVersionName() {
+        try {
+            return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (PackageManager.NameNotFoundException error) {
+
+        }
+        return null;
+    }
+
+    /* GitHubのReleasesから最新のversionNameを取得する */
+    public String getLatestVersionName() {
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = new AsyncJsonTask().execute(githubJsonUrl).get();
+            return jsonObject.getString("tag_name");
+        } catch (Exception error) {
+        }
+        return null;
+    }
 
 
     /* 戻るボタンの制御 */
@@ -137,6 +215,41 @@ public class MainActivity extends Activity {
         return;
     }
 
+    /* JSONを取得するタスク */
+    public class AsyncJsonTask extends AsyncTask<String, Void, JSONObject> {
+        @Override
+        protected JSONObject doInBackground(String... urls) {
+
+            try {
+                URL url = new URL(urls[0]);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                String resStr = inputStreamToString(connection.getInputStream());
+                return new JSONObject(resStr);
+            } catch (IOException error) {
+
+            } catch (JSONException error) {
+
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(JSONObject result) {
+
+        }
+
+        /* InputStreamをStringにする */
+        private String inputStreamToString(InputStream inputStream) throws IOException {
+            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder sb = new StringBuilder();
+            String tmp;
+            while ((tmp = br.readLine()) != null) {
+                sb.append(tmp);
+            }
+            br.close();
+            return sb.substring(0);
+        }
+    }
 
     /* ドロワーのナビゲーションリスナ */
     public class TJNavigationListener implements NavigationView.OnNavigationItemSelectedListener {
