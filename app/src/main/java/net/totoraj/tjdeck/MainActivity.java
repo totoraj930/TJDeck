@@ -7,14 +7,19 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
-import android.view.View;
+import android.view.MenuItem;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,7 +32,9 @@ import java.util.regex.Pattern;
 
 public class MainActivity extends Activity {
     private String TAG = "TJDeck";
-    private WebView mWebView = null;
+    private DrawerLayout mDrawerLayout;
+    private NavigationView mNavigationView;
+    private WebView mWebView;
 
     public static final int INPUT_FILE_REQUEST_CODE = 1;
     private ValueCallback<Uri[]> mFilePathCallback;
@@ -39,7 +46,12 @@ public class MainActivity extends Activity {
 
         setContentView(R.layout.activity_main);
 
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mNavigationView = (NavigationView) findViewById(R.id.navigation_view);
+        mNavigationView.setNavigationItemSelectedListener(new TJNavigationListener());
+
         mWebView = (WebView) findViewById(R.id.webView1);
+
 
         mWebView.setWebViewClient(new TJClient());
 
@@ -62,10 +74,16 @@ public class MainActivity extends Activity {
     }
 
 
-    /* 戻るボタンでブラウザバックするようにする */
+
+    /* 戻るボタンの制御 */
     @Override
     public void onBackPressed() {
-        if (mWebView.canGoBack()) {
+
+        if (mDrawerLayout.isDrawerOpen(GravityCompat.START)) {// ドロワーが開いていたら閉じる
+            mDrawerLayout.closeDrawer(GravityCompat.START);
+            return;
+        }
+        else if (mWebView.canGoBack()) {// WebViewで戻れたら戻る
             mWebView.goBack();
             return;
         }
@@ -114,6 +132,21 @@ public class MainActivity extends Activity {
         mFilePathCallback.onReceiveValue(results);
         mFilePathCallback = null;
         return;
+    }
+
+
+    /* ドロワーのナビゲーションリスナ */
+    public class TJNavigationListener implements NavigationView.OnNavigationItemSelectedListener {
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+            int id = menuItem.getItemId();
+            if (id == R.id.menu_show_tjdeck_option) {// TJDeck内の設定を表示
+                mWebView.evaluateJavascript("tj_deck.showOptionPanel()", null);
+            }
+
+            mDrawerLayout.closeDrawer(GravityCompat.START);
+            return true;
+        }
     }
 
 
