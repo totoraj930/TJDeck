@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:title="TJDeck設定を開く" android:id="@+id/menu_show_tjdeck_option" />
+    <item android:title="TJDeckの設定を開く" android:id="@+id/menuShowTJDeckOption" />
 </menu>

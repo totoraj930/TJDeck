@@ -8,12 +8,18 @@
     tools:context=".MainActivity">
 
     <WebView
-        android:id="@+id/webView1"
+        android:id="@+id/webView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <FrameLayout
+        android:id="@+id/customView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="invisible" />
+
     <android.support.design.widget.NavigationView
-        android:id="@+id/navigation_view"
+        android:id="@+id/navigationView"
         android:layout_width="240dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"

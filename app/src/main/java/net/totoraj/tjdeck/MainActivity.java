@@ -13,13 +13,14 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Toast;
+import android.widget.FrameLayout;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -34,6 +35,7 @@ public class MainActivity extends Activity {
     private String TAG = "TJDeck";
     private DrawerLayout mDrawerLayout;
     private NavigationView mNavigationView;
+    private FrameLayout mCustomView;
     private WebView mWebView;
 
     public static final int INPUT_FILE_REQUEST_CODE = 1;
@@ -47,10 +49,11 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mNavigationView = (NavigationView) findViewById(R.id.navigation_view);
+        mNavigationView = (NavigationView) findViewById(R.id.navigationView);
         mNavigationView.setNavigationItemSelectedListener(new TJNavigationListener());
 
-        mWebView = (WebView) findViewById(R.id.webView1);
+        mWebView = (WebView) findViewById(R.id.webView);
+        mCustomView = findViewById(R.id.customView);
 
 
         mWebView.setWebViewClient(new TJClient());
@@ -83,7 +86,7 @@ public class MainActivity extends Activity {
             mDrawerLayout.closeDrawer(GravityCompat.START);
             return;
         }
-        else if (mWebView.canGoBack()) {// WebViewで戻れたら戻る
+        else if (mCustomView.getVisibility() != View.VISIBLE && mWebView.canGoBack()) {// WebViewで戻れたら戻る
             mWebView.goBack();
             return;
         }
@@ -140,7 +143,7 @@ public class MainActivity extends Activity {
         @Override
         public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
             int id = menuItem.getItemId();
-            if (id == R.id.menu_show_tjdeck_option) {// TJDeck内の設定を表示
+            if (id == R.id.menuShowTJDeckOption) {// TJDeck内の設定を表示
                 mWebView.evaluateJavascript("tj_deck.showOptionPanel()", null);
             }
 
@@ -252,6 +255,29 @@ public class MainActivity extends Activity {
 
     // https://github.com/googlearchive/chromium-webview-samples/blob/master/input-file-example/app/src/main/java/inputfilesample/android/chrome/google/com/inputfilesample/MainFragment.java
     public class TJChromeClient extends WebChromeClient {
+        private View mVideoView = null;
+        /* フルスクリーン対応 */
+        public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
+            super.onShowCustomView(view, callback);
+            if (mVideoView != null) {
+                mCustomView.removeView(mVideoView);
+            }
+            mVideoView = view;
+            mCustomView.addView(mVideoView);
+            mWebView.setVisibility(View.INVISIBLE);
+            mCustomView.setVisibility(View.VISIBLE);
+            mCustomView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        }
+        public void onHideCustomView() {
+            super.onHideCustomView();
+            mCustomView.removeView(mVideoView);
+            mWebView.setVisibility(View.VISIBLE);
+            mCustomView.setVisibility(View.INVISIBLE);
+            mVideoView = null;
+        }
+
+        /* ファイル選択画面の表示 */
         public boolean onShowFileChooser(
                 WebView webView, ValueCallback<Uri[]> filePathCallback,
                 WebChromeClient.FileChooserParams fileChooserParams) {
